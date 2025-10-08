@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>📚 Student Bookshelf</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://necolas.github.io/normalize.css/8.0.1/normalize.css" rel="stylesheet">
+  <style>
+    body {
+      padding: 2rem;
+    }
+    #book-form input, #book-form textarea {
+      margin-bottom: 10px;
+    }
+    #cancel-edit {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <h1 class="mb-4">📘 Student Bookshelf</h1>
+
+  <form id="book-form" class="mb-4">
+    <input type="hidden" id="book-id">
+    <input type="text" id="title" class="form-control" placeholder="Book Title" required>
+    <input type="text" id="author" class="form-control" placeholder="Author">
+    <input type="number" id="year" class="form-control" placeholder="Year">
+    <textarea id="summary" class="form-control" placeholder="Summary"></textarea>
+    <button type="submit" class="btn btn-success mt-2">Save</button>
+    <button type="button" id="cancel-edit" class="btn btn-secondary mt-2">Cancel</button>
+  </form>
+
+  <h2 class="mb-3">📖 Book List</h2>
+  <table class="table table-bordered table-hover">
+    <thead>
+      <tr><th>Title</th><th>Author</th><th>Year</th><th>Summary</th><th>Actions</th></tr>
+    </thead>
+    <tbody id="books-table-body"></tbody>
+  </table>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script>
+    const api = '/api/books';
+
+    function fetchBooks() {
+      $.get(api, (books) => {
+        const rows = books.map(book => `
+          <tr>
+            <td>${book.title}</td>
+            <td>${book.author || ''}</td>
+            <td>${book.year || ''}</td>
+            <td>${book.summary || ''}</td>
+            <td>
+              <button class="btn btn-warning btn-sm edit-btn" data-id="${book._id}">Edit</button>
+              <button class="btn btn-danger btn-sm delete-btn" data-id="${book._id}">Delete</button>
+            </td>
+          </tr>
+        `);
+        $('#books-table-body').html(rows.join(''));
+      });
+    }
+
+    function resetForm() {
+      $('#book-id').val('');
+      $('#title').val('');
+      $('#author').val('');
+      $('#year').val('');
+      $('#summary').val('');
+      $('#cancel-edit').hide();
+    }
+
+    $(document).ready(() => {
+      fetchBooks();
+
+      $('#book-form').submit(function (e) {
+        e.preventDefault();
+        const id = $('#book-id').val();
+        const book = {
+          title: $('#title').val(),
+          author: $('#author').val(),
+          year: parseInt($('#year').val()),
+          summary: $('#summary').val()
+        };
+
+        if (id) {
+          // UPDATE
+          $.ajax({
+            url: `${api}/${id}`,
+            method: 'PUT',
+            contentType: 'application/json',
+            data: JSON.stringify(book),
+            success: () => {
+              fetchBooks();
+              resetForm();
+            }
+          });
+        } else {
+          // CREATE
+          $.post(api, book, () => {
+            fetchBooks();
+            resetForm();
+          });
+        }
+      });
+
+      $(document).on('click', '.edit-btn', function () {
+        const id = $(this).data('id');
+        $.get(`${api}/${id}`, (book) => {
+          $('#book-id').val(book._id);
+          $('#title').val(book.title);
+          $('#author').val(book.author);
+          $('#year').val(book.year);
+          $('#summary').val(book.summary);
+          $('#cancel-edit').show();
+        });
+      });
+
+      $(document).on('click', '.delete-btn', function () {
+        const id = $(this).data('id');
+        $.ajax({
+          url: `${api}/${id}`,
+          method: 'DELETE',
+          success: () => fetchBooks()
+        });
+      });
+
+      $('#cancel-edit').click(() => resetForm());
+    });
+  </script>
+</body>
+</html>
