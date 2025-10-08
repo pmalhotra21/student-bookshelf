@@ -20,17 +20,23 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// POST (create) book
+// POST (create)
+
+
 router.post('/', async (req, res) => {
+  console.log('📥 Received POST /api/books, body =', req.body);  // << log
   try {
     const book = await Book.create(req.body);
+    console.log('✅ Created book:', book);  // << log
     res.status(201).json(book);
   } catch (err) {
+    console.error('❌ POST /api/books error:', err);  // << log
     res.status(400).json({ error: err.message });
   }
 });
 
-// PUT (update) book
+
+// PUT (update)
 router.put('/:id', async (req, res) => {
   try {
     const updated = await Book.findByIdAndUpdate(req.params.id, req.body, { new: true });
@@ -41,7 +47,7 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// DELETE book
+// DELETE
 router.delete('/:id', async (req, res) => {
   try {
     const deleted = await Book.findByIdAndDelete(req.params.id);
